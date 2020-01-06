@@ -324,6 +324,42 @@ class AndroidGitVersionTest extends GroovyTestCase {
         }
     }
 
+    void testMatchGitDescribeOffByDefault() {
+        addCommit()
+        addTag("1.0-dev")
+        addBranch("release")
+        addCommit()
+        def releaseCommit = addCommit()
+        addTag("1.1-final")
+        checkout("master")
+        addCommit()
+        addCommit()
+        merge(releaseCommit)
+        // This shows we are picking the "wrong" tag when merged, issue #34
+        assertEquals("1.1-final", plugin.name())
+    }
+
+    void testMatchGitDescribeIncludesHash() {
+        plugin.matchGitDescribe = true
+        addCommit()
+        addTag("1.0")
+    }
+
+    void testMatchGitDescribeUsesCorrectCommit() {
+        plugin.matchGitDescribe = true
+        addCommit()
+        addTag("1.0.0")
+        addBranch("release")
+        addCommit()
+        def releaseCommit = addCommit()
+        addTag("1.0.1")
+        checkout("master")
+        addCommit()
+        addCommit()
+        merge(releaseCommit)
+        assertEquals("1.0.1-3", plugin.name())
+    }
+
     void testFormat() {
         addCommit()
         addTag("1.0")
@@ -497,6 +533,7 @@ class AndroidGitVersionTest extends GroovyTestCase {
         new File(projectFolder.root, "build.gradle").append("// addition")
         git.add().addFilepattern("build.gradle").call()
         git.commit().setMessage("addition").call()
+        println "New commit hash is: " + git.repository.getRefDatabase().getRefs().get("HEAD").getObjectId().getName()
     }
 
     private void addTag(String tagName) {
