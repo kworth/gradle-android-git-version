@@ -42,6 +42,11 @@ class AndroidGitVersion implements Plugin<Project> {
 
 class AndroidGitVersionExtension {
     /**
+     *
+     */
+    boolean matchGitDescribe = false
+
+    /**
      * Prefix used to specify special text before the tag. Useful in projects which manage
      * multiple external version names.
      */
@@ -124,6 +129,10 @@ class AndroidGitVersionExtension {
 
         String name = results.lastVersion
 
+        if (matchGitDescribe) {
+            return name
+        }
+
         if (name == "unknown") return name
         name = this.format
 
@@ -202,6 +211,7 @@ class AndroidGitVersionExtension {
         // No commits?
         if (!head.getObjectId()) return results
 
+        String description = git.describe().call()
         results.commitPrefix = ObjectId.toString(head.getObjectId())[0..6]
         results.branchName = repo.getBranch()
 
@@ -245,6 +255,10 @@ class AndroidGitVersionExtension {
                         .findResult{ x,y-> x<=>y ?: null } ?: b.size() <=> a.size()
                 }.
                 last()
+
+        if (matchGitDescribe) {
+            results.lastVersion = git.describe().call()
+        }
 
         results
     }

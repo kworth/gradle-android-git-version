@@ -324,6 +324,41 @@ class AndroidGitVersionTest extends GroovyTestCase {
         }
     }
 
+    void testMatchGitDescribeOffByDefault() {
+        addCommit()
+        addTag("1.0-dev")
+        addBranch("release")
+        addCommit()
+        releaseCommit = addCommit()
+        addTag("1.1-final")
+        checkout("master")
+        addCommit()
+        addCommit()
+        merge(releaseCommit)
+        // This shows we are picking the "wrong" tag when merged, issue #34
+        assertEquals("1.1-final", plugin.name())
+    }
+
+//    void testMatchGitDescribeIncludesHash() {
+//        plugin.matchGitDescribe = true
+//        addCommit()
+//        addTag("1.0")
+//    }
+
+    void testMatchGitDescribeUsesCorrectCommit() {
+        plugin.matchGitDescribe = true
+        addCommit()
+        addTag("1.0.0")
+        addCommit()
+        def currentHash = git.getRepository().getAllRefs().get("HEAD").getObjectId().getName() //  git.getRepository().getRefDatabase().getRefs().get(1) // git.getRepository().getRefDatabase().getRefs().get("HEAD").getObjectId()
+        def shortHash = currentHash.substring(0, 7)
+        def expectedVersionName = "1.0.0-1-g" + shortHash // plugin.name()
+//        assertEquals(expectedVersionName, plugin.name())
+        def name = plugin.name()
+        assert name.startsWith("1.0.0-1-g")
+        assert name.endsWith(shortHash)
+    }
+
     void testFormat() {
         addCommit()
         addTag("1.0")
