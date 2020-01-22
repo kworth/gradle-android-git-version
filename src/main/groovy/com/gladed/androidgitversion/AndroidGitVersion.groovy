@@ -41,6 +41,7 @@ class AndroidGitVersion implements Plugin<Project> {
 }
 
 class AndroidGitVersionExtension {
+
     /**
      * Prefix used to specify special text before the tag. Useful in projects which manage
      * multiple external version names.
@@ -127,12 +128,18 @@ class AndroidGitVersionExtension {
      * intervening commits if any.
      */
     final String name() {
+
         if (!results) results = scan()
 
         String name = results.lastVersion
 
+
         if (name == "unknown") return name
         name = this.format
+
+        if (results.outputOfGitDescribe != null) {
+            name = name.replace("%describe%", results.outputOfGitDescribe)
+        }
 
         def parts = [tag: results.lastVersion]
         if (results.revCount > 0) {
@@ -253,6 +260,8 @@ class AndroidGitVersionExtension {
                         .findResult{ x,y-> x<=>y ?: null } ?: b.size() <=> a.size()
                 }.
                 last()
+
+        results.outputOfGitDescribe = git.describe().call()
 
         results
     }
@@ -396,6 +405,9 @@ class AndroidGitVersionExtension {
 
         /** Most recent version seen */
         String lastVersion = 'unknown'
+
+        /** The resulting output from calling git describe */
+        String outputOfGitDescribe = null
 
         List getVersionParts(int parts) {
             List<String> empties = (1..parts).collect { "0" }
